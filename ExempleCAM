@@ -1,0 +1,19 @@
+
+		Stack			|	Code
+
+()					|	(quote 4)
+4					|	push
+4.4					|	(cur push;fst;swap;snd;plus;push)
+(push;fst;swap;snd;plus;push:4).4	|	swap
+4.(push;fst;swap;snd;plus;push:4)	|	(quote 5)
+5.(push;fst;swap;snd;plus;push:4)	|	push
+5.5.(push;fst;swap;snd;plus;push:4)	|	plus
+10.(push;fst;swap;snd;plus;push:4)	|	app
+(4, 10)					|	push
+(4, 10).(4, 10)				|	fst
+4.(4, 10)				|	swap
+(4, 10).4				|	snd
+10.4					|	plus
+14					|	push
+14.14					|	plus
+28					|	-
