@@ -1,8 +1,10 @@
 Inductive lambda_term : Set :=
- | variable : nat -> lambda_term
- | abstraction : nat -> lambda_term -> lambda_term
+ | variable : nat -> lambda_term (* variables libres *)
+ | reference : nat -> lambda_term (* variables liées *)
+ | abstraction : lambda_term -> lambda_term
  | application : lambda_term -> lambda_term -> lambda_term.
 
+Inductive substitution : nat -> lambda_term -> lambda_term := ...
 
 (*Inductive subtitution : ((nat -> lambda_term) -> lambda_term) -> lambda_term :=
  | sur_variable : forall (x : nat) (l : lambda_term), subtitution x l (variable x) -> l
