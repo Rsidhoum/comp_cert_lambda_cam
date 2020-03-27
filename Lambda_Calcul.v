@@ -22,7 +22,13 @@ Fixpoint br (n : nat) (t : lambda_term) (u : lambda_term) : lambda_term :=
   | (application t1 t2) => application (br n t1 u) (br n t2 u)
   end.
 
-Fixpoint beta_reduction (t : lambda_term) (u : lambda_term) : lambda_term := br 0 t u.
+Fixpoint beta_reduction (t : lambda_term) (u : lambda_term) : lambda_term :=
+	match t with
+	| abstraction x => br 0 x u
+	| variable _ => t
+	| reference _ => t
+	| application _ _ => t
+	end.
 
 (* l x. x x *)
 Check abstraction (application (reference 0) (reference 0)). 
