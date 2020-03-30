@@ -6,29 +6,21 @@ Inductive lambda_term : Set :=
 | abstraction : lambda_term -> lambda_term
 | application : lambda_term -> lambda_term -> lambda_term.
 
-Fixpoint br (n : nat) (t : lambda_term) (u : lambda_term) : lambda_term :=
-  match t with
-  (* variable libre *)
-  | variable x => variable x
-  (* on remplace si c'est le bon indice *)
-  | reference m =>
-  	match (eq_nat_dec n m) with
-  	| left _ => u
-  	| _ => reference m
-  	end
-  (* on passe un lambda donc on incrémente l'indice *)
-  | abstraction x => br (n + 1) x u
-  (* on passe au contexte *)
-  | (application t1 t2) => application (br n t1 u) (br n t2 u)
-  end.
+Inductive br : nat -> lambda_term -> lambda_term -> lambda_term -> Prop :=
+| br_variable : forall (n x : nat) (u : lambda_term),
+	br n (variable x) u (variable x)
+| br_reference : forall (n : nat) (t : lambda_term),
+	br n (reference n) t t
+| br_reference_2 : forall (n m : nat) (u : lambda_term),
+	n <> m -> br n (reference m) u (reference m)
+| br_abstraction : forall (n : nat) (t t' u : lambda_term),
+	(br n (abstraction t) u t') -> br (n + 1) t u t'
+| br_application : forall (n : nat) (t1 t2 t1' t2' u : lambda_term),
+	br n t1 u t1' -> br n t2 u t2' -> br n (application t1 t2) u (application t1' t2').
 
-Fixpoint beta_reduction (t : lambda_term) (u : lambda_term) : lambda_term :=
-	match t with
-	| abstraction x => br 0 x u
-	| variable _ => t
-	| reference _ => t
-	| application _ _ => t
-	end.
+Inductive beta_reduction : lambda_term -> lambda_term -> Prop :=
+| Beta_redex : forall (t t' u : lambda_term),
+  br 0 t u t' -> beta_reduction (application (abstraction t) u) t'.
 
 (* l x. x x *)
 Check abstraction (application (reference 0) (reference 0)). 
