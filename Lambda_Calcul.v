@@ -17,7 +17,7 @@ Fixpoint br_fix (n : nat) (t u : lambda_term) : lambda_term :=
        | _ => reference m
        end
   (* on passe un lambda donc on incrémente l'indice *)
-  | abstraction x => br_fix (n + 1) x u
+  | abstraction x => abstraction (br_fix (n + 1) x u)
   (* on passe au contexte *)
   | (application t1 t2) => application (br_fix n t1 u) (br_fix n t2 u)
   end.
@@ -51,7 +51,7 @@ Inductive br : nat -> lambda_term -> lambda_term -> lambda_term -> Prop :=
 | br_reference_2 : forall (n m : nat) (u : lambda_term),
 	n <> m -> br n (ref m) u (ref m)
 | br_abstraction : forall (n : nat) (t t' u : lambda_term),
-	br (S n) t u t' -> br n (λ t) u t'
+	br (S n) t u t' -> br n (λ t) u (λ t')
 | br_application : forall (n : nat) (t1 t2 t1' t2' u : lambda_term),
 	br n t1 u t1' -> br n t2 u t2' -> br n (app t1 t2) u (app t1' t2').
 
@@ -73,7 +73,11 @@ Inductive beta_ref_trans : lambda_term -> lambda_term -> Prop :=
 | Beta_ref : forall (t : lambda_term),
 	beta_ref_trans t t
 | Beta_trans : forall (u t v : lambda_term),
-	beta_ref_trans t u -> beta_ref_trans u v -> beta_ref_trans t v.
+	beta_ref_trans t u -> beta_ref_trans u v -> beta_ref_trans t v
+| Beta_cong_lambda : forall (t t': lambda_term), beta_ref_trans t t' ->
+  beta_ref_trans (λ t) (λ t')
+| Beta_cong_app : forall (t u t' u': lambda_term), beta_ref_trans t t' ->
+  beta_ref_trans u u' -> beta_ref_trans (app t u) (app t' u').
 
 Inductive beta_sym : lambda_term -> lambda_term -> Prop :=
 | Beta_redex_sym : forall (t u : lambda_term),
@@ -99,7 +103,7 @@ apply Beta_redex.
 apply br_reference.
 Qed.
 
-Lemma vrai_id : forall t : lambda_term, app vrai t ->β t.
+Lemma vrai_id : forall (t u : lambda_term), (app (app vrai t) u) ->β t.
 Proof.
 intro.
 apply Beta_redex.
