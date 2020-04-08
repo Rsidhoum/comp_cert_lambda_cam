@@ -1,4 +1,5 @@
 Require Import ZArith.
+Require Import FunInd.
 
 Inductive lambda_term : Set :=
 | variable : nat -> lambda_term  (* variables libres *)
@@ -6,42 +7,34 @@ Inductive lambda_term : Set :=
 | abstraction : lambda_term -> lambda_term
 | application : lambda_term -> lambda_term -> lambda_term.
 
-Fixpoint br_fix (n : nat) (t u : lambda_term) : lambda_term :=
-  match t with
-  (* variable libre *)
-  | variable x => variable x
-  (* on remplace si c'est le bon indice *)
-  | reference m =>
-       match (eq_nat_dec n m) with
-       | left _ => u
-       | _ => reference m
-       end
-  (* on passe un lambda donc on incrémente l'indice *)
-  | abstraction x => abstraction (br_fix (n + 1) x u)
-  (* on passe au contexte *)
-  | (application t1 t2) => application (br_fix n t1 u) (br_fix n t2 u)
-  end.
-
-Fixpoint beta_reduction_fix (t u : lambda_term) : option lambda_term :=
-    match t with
-    | abstraction x => Some (br_fix 0 x u)
-    | variable _ => None
-    | reference _ => None
-    | application _ _ => None
-    end.
-
-Fixpoint redex_fixpoint (t u : lambda_term) : lambda_term :=
-	match t with
-    | abstraction x => br_fix 0 x u
-    | variable _ => t
-    | reference _ => t
-    | application _ _ => t
-    end.
-
 Notation "'var' t" := (variable t) (at level 80, right associativity).
 Notation "'ref' t" := (reference t) (at level 85, right associativity).
 Notation "'λ' t" := (abstraction t) (at level 99, right associativity).
 Notation "'app'" := application (at level 79).
+
+Fixpoint br_fix (n : nat) (t u : lambda_term) : lambda_term :=
+  match t with
+  (* variable libre *)
+  | var x => var x
+  (* on remplace si c'est le bon indice *)
+  | ref m =>
+       match (eq_nat_dec n m) with
+       | left _ => u
+       | _ => ref m
+       end
+  (* on passe un lambda donc on incrémente l'indice *)
+  | λ x => λ (br_fix (n + 1) x u)
+  (* on passe au contexte *)
+  | app t1 t2 => app (br_fix n t1 u) (br_fix n t2 u)
+  end.
+
+Fixpoint beta_reduction_fix (t u : lambda_term) : option lambda_term :=
+    match t with
+    | var _ => None
+    | ref _ => None
+    | λ x => Some (br_fix 0 x u)
+    | app _ _ => None
+    end.
 
 Inductive br : nat -> lambda_term -> lambda_term -> lambda_term -> Prop :=
 | br_variable : forall (n x : nat) (u : lambda_term),
@@ -51,7 +44,7 @@ Inductive br : nat -> lambda_term -> lambda_term -> lambda_term -> Prop :=
 | br_reference_2 : forall (n m : nat) (u : lambda_term),
 	n <> m -> br n (ref m) u (ref m)
 | br_abstraction : forall (n : nat) (t t' u : lambda_term),
-	br (S n) t u t' -> br n (λ t) u (λ t')
+	br (n + 1) t u t' -> br n (λ t) u (λ t')
 | br_application : forall (n : nat) (t1 t2 t1' t2' u : lambda_term),
 	br n t1 u t1' -> br n t2 u t2' -> br n (app t1 t2) u (app t1' t2').
 
@@ -59,13 +52,28 @@ Inductive beta_reduction : lambda_term -> lambda_term -> Prop :=
 | Beta_redex : forall (t t' u : lambda_term),
   br 0 t u t' -> beta_reduction (app (λ t) u) t'.
 
+Ltac remove_br :=
+  repeat
+  match goal with
+  | |- context[br _ (var ?x) _ (var ?x)] => apply br_variable
+  | |- context[br ?n (ref ?n) ?u ?u] => apply br_reference
+  | |- context[br ?n (ref ?m) _ (ref ?m)] => apply br_reference_2; auto
+  | |- context[br _ (λ ?t) _ (λ ?t')] => apply br_abstraction; simpl
+  | |- context[br _ (app ?t1 ?t2) _ (app ?t1' ?t2')] => apply br_application
+  end.
+
+Functional Scheme br_fix_ind := Induction for br_fix Sort Prop.
+
 Lemma correction_br : forall (n : nat) (l u : lambda_term), br n l u (br_fix n l u).
 Proof.
-induction n; intros; elim l; intros.
-apply br_variable.
-induction n. apply br_reference. apply br_reference_2; auto.
-apply br_abstraction.
-Admitted.
+intros.
+functional induction (br_fix n l u).
+remove_br.
+remove_br.
+remove_br.
+remove_br. apply IHl0.
+remove_br. apply IHl0. apply IHl1.
+Qed.
 
 Inductive beta_ref_trans : lambda_term -> lambda_term -> Prop :=
 | Beta_redex_ref_trans : forall (t u : lambda_term),
@@ -93,6 +101,7 @@ Definition id := (λ (ref 0)). (* x -> x *)
 Definition vrai := (λ (λ (ref 1))). (* x,y -> x *)
 Definition faux := (λ (λ (ref 0))). (* x,y -> y *)
 Definition ifthenelse := (λ (λ (λ (app (app (ref 2) (ref 1))) (ref 0)))).
+(* b,x,y -> b(x,y) *)
 Definition x := (var 0).
 Definition y := (var 1).
 
@@ -100,41 +109,47 @@ Lemma identity : forall t : lambda_term, app id t ->β t.
 Proof.
 intros.
 apply Beta_redex.
-apply br_reference.
+remove_br.
 Qed.
 
-Lemma vrai_id : forall (t u : lambda_term), (app (app vrai t) u) ->β t.
-Proof.
-intro.
-apply Beta_redex.
-apply br_abstraction.
-apply br_reference.
-Qed.
-
-Goal forall t : lambda_term, (app id t) =β (app vrai t).
+Lemma if_vrai : forall t t' : lambda_term, br 0 t t' t -> app (app (app ifthenelse vrai) t) t' ->*β t.
 Proof.
 intros.
-apply (Beta_sym t); apply Beta_redex_sym; apply Beta_redex_ref_trans. apply identity. apply vrai_id.
+apply (Beta_trans (app (λ t) t')).
+apply (Beta_trans (app (app vrai t) t')).
+apply Beta_cong_app.
+apply (Beta_trans (app (λ (λ (app (app vrai (ref 1)) (ref 0)))) t)).
+apply Beta_cong_app.
+apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_ref.
+apply Beta_cong_app.
+apply Beta_cong_lambda.
+apply Beta_cong_lambda.
+apply (Beta_trans (app (λ (ref 1)) (ref 0))).
+apply Beta_cong_app.
+apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_ref.
+apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_ref.
+apply Beta_ref.
+apply Beta_cong_app.
+apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_ref.
+apply Beta_redex_ref_trans; apply Beta_redex.
+apply H.
 Qed.
 
-Goal app ifthenelse vrai ->β app (app vrai (ref 1)) (ref 0).
-Proof.
-apply Beta_redex.
-apply br_abstraction.
-apply br_abstraction.
-apply br_application.
-apply br_application.
-apply br_reference.
-apply br_reference_2; auto.
-apply br_reference_2; auto.
-Qed.
+Definition Y := λ (app (λ (app (ref 1) (app (ref 0) (ref 0)))) (λ (app (ref 1) (app (ref 0) (ref 0))))). (* combinateur de point fixe (Curry) *)
 
-Goal app (λ app vrai (ref 1)) (ref 0) ->β (app ((ref 1)) (ref 1)).
-Proof.
-apply Beta_redex.
-apply br_application.
-apply br_abstraction.
-apply br_abstraction.
-apply br_reference_2; auto.
-apply br_reference_2; auto.
+Lemma point_fixe_curry : forall (g:lambda_term) (x:nat), g = (var x) -> (app Y g) =β (app g (app Y g)).
+intros.
+apply (Beta_sym (app g (app (λ (app g (app (ref 0) (ref 0)))) (λ (app g (app (ref 0) (ref 0))))))).
+apply (Beta_sym  (app (λ (app g (app (ref 0) (ref 0)))) (λ (app g (app (ref 0) (ref 0)))))).
+apply Beta_redex_sym; apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply (Beta_sym (app g (app (λ (app g (app (ref 0) (ref 0)))) (λ (app g (app (ref 0) (ref 0))))))); apply Beta_redex_sym.
+apply Beta_ref.
+apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+rewrite H; remove_br.
+apply Beta_redex_sym; apply Beta_cong_app.
+apply Beta_ref. apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
 Qed.
