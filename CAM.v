@@ -36,7 +36,7 @@ Inductive cam_reduction (A : Set) : (stack A) -> (code A) -> (stack A) -> (code 
 		S' = (((paire A) s t)::S) -> (cam_reduction A) (t::s::S) ((cons A)::C) S' C
 | reduc_app : forall (s t : (stack_element A)) (S S' : (stack A)) (C C1 : (code A)), 
 		S' = (((paire A) s t)::S) -> (cam_reduction A) (t::((avec_code A) C s)::S) ((app A)::C1) S' (C++C1) (*Ici faut-il aussi remplacer (C++C1) par C' et mettre quelque chose de similaire à S'*).
-
+  
 Lemma pourFst:
 	forall (s t : (stack_element nat)) (S S' : (stack nat)) (C : (code nat)),
 	(cam_reduction nat) (((paire nat) s t)::S) ((fst nat)::C) (s::S) C.
@@ -118,9 +118,58 @@ Inductive cam_reduction_ref_trans (A : Set) : (stack A) -> (code A) -> (stack A)
 | reduc_trans : forall (S S' S'' : (stack A)) (C C' C'' :(code A)),
 	(cam_reduction_ref_trans A) S C S' C' -> (cam_reduction_ref_trans A) S' C' S'' C'' -> (cam_reduction_ref_trans A) S C S'' C''.
 
+(*s.S | push;(quote 0);C -> 0.s.S | C*)
 Lemma pourAjoutZero :
 	forall (S : (stack nat)) (C : (code nat)) (s : (stack_element nat)), 
-	(cam_reduction nat) (s::S) ((push nat)::((quote nat) 0)::C) (((constante nat) 0)::s::S) C.
+	(cam_reduction_ref_trans nat) (s::S) ((push nat)::((quote nat) 0)::C) (((constante nat) 0)::s::S) C.
 Proof.
 intros.
-apply (reduc_trans ((cam_reduction_ref_trans nat) (s::S) ((push nat)::((quote nat) 0)::C) (s::s::S) (((quote nat) 0)::C))).
+apply reduc_trans with (s::s::S) (((quote nat) 0)::C); apply reduc_cas_base.
+apply reduc_push.
+trivial.
+trivial.
+apply reduc_quote.
+trivial.
+Qed.
+
+(*s.t.S | (cur push;fst;swap;snd;swap);swap;app;C -> s.t.S | C*)
+Lemma pourFonctionInutile :
+	forall (S : (stack nat)) (C : (code nat)) (s t : (stack_element nat)),
+	(cam_reduction_ref_trans nat) (s::t::S) (((cur nat) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::nil))::(swap nat)::(app nat)::C) (s::t::S) C.
+Proof.
+intros.
+apply reduc_trans with (((avec_code nat) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::nil) s)::t::S) ((swap nat)::(app nat)::C).
+apply reduc_cas_base.
+apply reduc_cur.
+trivial.
+apply reduc_trans with (t::((avec_code nat) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::nil) s)::S) ((app nat)::C).
+apply reduc_cas_base.
+apply reduc_swap.
+trivial.
+apply reduc_trans with (((paire nat) s t)::S) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::C).
+apply reduc_cas_base.
+apply reduc_app.
+trivial.
+apply reduc_trans with (((paire nat) s t)::((paire nat) s t)::S) ((fst nat)::(swap nat)::(snd nat)::(swap nat)::C).
+apply reduc_cas_base.
+apply reduc_push.
+trivial.
+trivial.
+apply reduc_trans with (s::((paire nat) s t)::S) ((swap nat)::(snd nat)::(swap nat)::C).
+apply reduc_cas_base.
+apply reduc_fst.
+trivial.
+apply reduc_trans with (((paire nat) s t)::s::S) ((snd nat)::(swap nat)::C).
+apply reduc_cas_base.
+apply reduc_swap.
+trivial.
+apply reduc_trans with (t::s::S) ((swap nat)::C).
+apply reduc_cas_base.
+apply reduc_snd.
+trivial.
+apply reduc_trans with (s::t::S) C.
+apply reduc_cas_base.
+apply reduc_swap.
+trivial.
+apply reduc_ref.
+Qed.
