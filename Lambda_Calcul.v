@@ -36,6 +36,12 @@ Fixpoint beta_reduction_fix (t u : lambda_term) : option lambda_term :=
     | app _ _ => None
     end.
 
+Fixpoint get_redex (t u : lambda_term) : lambda_term :=
+    match (beta_reduction_fix t u) with
+    | Some t' => t'
+    | None => (app t u)
+  end.
+
 Inductive br : nat -> lambda_term -> lambda_term -> lambda_term -> Prop :=
 | br_variable : forall (n x : nat) (u : lambda_term),
 	br n (var x) u (var x)
@@ -75,6 +81,13 @@ remove_br. apply IHl0.
 remove_br. apply IHl0. apply IHl1.
 Qed.
 
+Lemma correction_beta_reduction : forall t u t' : lambda_term,  Some t' = (beta_reduction_fix (λ t) u) -> beta_reduction (app (λ t) u) t'.
+Proof.
+intros.
+inversion H.
+apply Beta_redex. apply correction_br.
+Qed.
+
 Inductive beta_ref_trans : lambda_term -> lambda_term -> Prop :=
 | Beta_redex_ref_trans : forall (t u : lambda_term),
 	beta_reduction t u -> beta_ref_trans t u
@@ -109,7 +122,7 @@ Lemma identity : forall t : lambda_term, app id t ->β t.
 Proof.
 intros.
 apply Beta_redex.
-remove_br.
+apply correction_br.
 Qed.
 
 Lemma if_vrai : forall t t' : lambda_term, br 0 t t' t -> app (app (app ifthenelse vrai) t) t' ->*β t.
@@ -120,36 +133,147 @@ apply (Beta_trans (app (app vrai t) t')).
 apply Beta_cong_app.
 apply (Beta_trans (app (λ (λ (app (app vrai (ref 1)) (ref 0)))) t)).
 apply Beta_cong_app.
-apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
 apply Beta_ref.
 apply Beta_cong_app.
 apply Beta_cong_lambda.
 apply Beta_cong_lambda.
 apply (Beta_trans (app (λ (ref 1)) (ref 0))).
 apply Beta_cong_app.
-apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
 apply Beta_ref.
-apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
 apply Beta_ref.
 apply Beta_ref.
 apply Beta_cong_app.
-apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
 apply Beta_ref.
 apply Beta_redex_ref_trans; apply Beta_redex.
 apply H.
 Qed.
 
-Definition Y := λ (app (λ (app (ref 1) (app (ref 0) (ref 0)))) (λ (app (ref 1) (app (ref 0) (ref 0))))). (* combinateur de point fixe (Curry) *)
+Definition Y := λ (app (λ (app (ref 1) (app (ref 0) (ref 0)))) (λ (app (ref 1) (app (ref 0) (ref 0))))).
 
-Lemma point_fixe_curry : forall (g:lambda_term) (x:nat), g = (var x) -> (app Y g) =β (app g (app Y g)).
+Lemma point_fixe_Y : forall (g:lambda_term) (x:nat), g = (var x) -> (app Y g) =β (app g (app Y g)).
+Proof.
 intros.
 apply (Beta_sym (app g (app (λ (app g (app (ref 0) (ref 0)))) (λ (app g (app (ref 0) (ref 0))))))).
 apply (Beta_sym  (app (λ (app g (app (ref 0) (ref 0)))) (λ (app g (app (ref 0) (ref 0)))))).
-apply Beta_redex_sym; apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_redex_sym; apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
 apply (Beta_sym (app g (app (λ (app g (app (ref 0) (ref 0)))) (λ (app g (app (ref 0) (ref 0))))))); apply Beta_redex_sym.
 apply Beta_ref.
-apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
-rewrite H; remove_br.
+apply Beta_redex_ref_trans; apply Beta_redex.
+rewrite H; apply correction_br.
 apply Beta_redex_sym; apply Beta_cong_app.
-apply Beta_ref. apply Beta_redex_ref_trans; apply Beta_redex; remove_br.
+apply Beta_ref. apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
 Qed.
+
+Definition Θ := (app (λ (λ (app (ref 0) (app (app (ref 1) (ref 1)) (ref 0))))) (λ (λ (app (ref 0) (app (app (ref 1) (ref 1)) (ref 0)))))).
+
+Lemma point_fixe_Θ : forall (g : lambda_term) (x : nat), g = (var x) -> (app Θ g) ->*β (app g (app Θ g)).
+Proof.
+intros.
+apply (Beta_trans (app (λ (app (ref 0) (app (app ((λ (λ (app (ref 0) (app (app (ref 1) (ref 1)) (ref 0)))))) ((λ (λ (app (ref 0) (app (app (ref 1) (ref 1)) (ref 0))))))) (ref 0)))) g)).
+apply Beta_cong_app.
+apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
+apply Beta_ref.
+apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
+Qed.
+
+Definition itere := λ (λ (λ (app (app (ref 2) (ref 1)) (ref 0)))).
+Definition l_0 := λ (λ (ref 0)).
+Definition l_1 := λ (λ (app (ref 1) (ref 0))).
+Definition l_2 := λ (λ (app (ref 1) (app (ref 1) (ref 0)))).
+Definition l_3 := λ (λ (app (ref 1) (app (ref 1) (app (ref 1) (ref 0))))).
+Definition l_4 := λ (λ (app (ref 1) (app (ref 1) (app (ref 1) (app (ref 1) (ref 0)))))).
+Definition l_5 := λ (λ (app (ref 1) (app (ref 1) (app (ref 1) (app (ref 1) (app (ref 1) (ref 0))))))).
+Definition l_6 := λ (λ (app (ref 1) (app (ref 1) (app (ref 1) (app (ref 1) (app (ref 1) (app (ref 1) (ref 0)))))))).
+Definition succ := λ (λ (λ (app (ref 1) (app (app (ref 2) (ref 1)) (ref 0))))).
+Definition add := λ (λ (app itere (app (ref 1) (app succ (ref 0))))).
+Definition fact := λ (app (ref 0) (λ λ λ (app (app (ref 0) (λ λ (app (ref 1) (app (app (ref 3) (ref 1)) (ref 0))))) (λ (app (ref 3) (app (ref 2) (ref 0))))))).
+
+Goal (app succ l_0) ->*β l_1.
+Proof.
+apply (Beta_trans (λ (λ (app (ref 1) (app (app l_0 (ref 1)) (ref 0)))))).
+apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
+apply Beta_cong_lambda; apply Beta_cong_lambda; apply Beta_cong_app.
+apply Beta_ref.
+apply (Beta_trans (app (λ (ref 0)) (ref 0))).
+apply Beta_cong_app. apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
+apply Beta_ref.
+apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
+Qed.
+
+Goal (app fact l_3) =β l_6.
+Proof.
+apply Beta_sym with (get_redex fact l_3); simpl.
+apply Beta_redex_sym; apply Beta_redex_ref_trans; apply correction_beta_reduction; reflexivity.
+apply Beta_sym with l_6; try (apply Beta_redex_sym; apply Beta_ref).
+apply Beta_sym with (get_redex l_3
+(λ λ λ (app)
+           ((app) (ref 0)
+              (λ λ (app) (ref 1) ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+           (λ (app) (ref 3) ((app) (ref 2) (ref 0))))
+); simpl.
+apply Beta_redex_sym; apply Beta_redex_ref_trans; apply correction_beta_reduction; reflexivity.
+apply Beta_sym with l_6; try (apply Beta_redex_sym; apply Beta_ref).
+apply Beta_sym with
+(λ (app)
+     (λ λ λ (app)
+              ((app) (ref 0)
+                 (λ λ (app) (ref 1) ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+              (λ (app) (ref 3) ((app) (ref 2) (ref 0))))
+     ((app)
+        (λ λ λ (app)
+                 ((app) (ref 0)
+                    (λ λ (app) (ref 1)
+                           ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+                 (λ (app) (ref 3) ((app) (ref 2) (ref 0))))
+                 (get_redex (λ λ λ (app)
+                    ((app) (ref 0)
+                       (λ λ (app) (ref 1)
+                              ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+                    (λ (app) (ref 3) ((app) (ref 2) (ref 0))))
+                    (ref 0)))); simpl.
+
+apply Beta_redex_sym; apply Beta_cong_lambda; apply Beta_cong_app; try apply Beta_ref. apply Beta_cong_app; try apply Beta_ref.
+apply Beta_redex_ref_trans; apply correction_beta_reduction; reflexivity.
+apply Beta_sym with l_6; try (apply Beta_redex_sym; apply Beta_ref).
+apply Beta_sym with
+(λ (app)
+     (λ λ λ (app)
+              ((app) (ref 0)
+                 (λ λ (app) (ref 1) ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+              (λ (app) (ref 3) ((app) (ref 2) (ref 0))))
+              (get_redex
+              (λ λ λ (app)
+                 ((app) (ref 0)
+                    (λ λ (app) (ref 1)
+                           ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+                 (λ (app) (ref 3) ((app) (ref 2) (ref 0))))
+              (λ λ (app)
+               ((app) (ref 0)
+                  (λ λ (app) (ref 1) ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+               (λ (app) (ref 0) ((app) (ref 2) (ref 0)))))); simpl.
+
+apply Beta_redex_sym; apply Beta_cong_lambda; apply Beta_cong_app; try apply Beta_ref.
+apply Beta_redex_ref_trans; apply correction_beta_reduction; reflexivity.
+apply Beta_sym with l_6; try (apply Beta_redex_sym; apply Beta_ref).
+apply Beta_sym with
+(λ (app)
+     (λ λ λ (app)
+              ((app) (ref 0)
+                 (λ λ (app) (ref 1) ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+              (λ (app) (ref 3) ((app) (ref 2) (ref 0))))
+     (λ λ (app)
+            ((app) (ref 0)
+               (λ λ (app) (ref 1) ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+               (get_redex  (λ λ (app)
+                        ((app) (ref 0)
+                           (λ λ (app) (ref 1)
+                                  ((app) ((app) (ref 3) (ref 1)) (ref 0))))
+                        (λ (app) (ref 0) ((app) (ref 2) (ref 0))))
+((app) (ref 2) (ref 0))))); simpl.
+apply Beta_redex_sym; apply Beta_cong_lambda; apply Beta_cong_app; try apply Beta_ref.
+repeat apply Beta_cong_lambda. apply Beta_cong_app; try apply Beta_ref. apply Beta_cong_lambda; apply Beta_cong_app.
+Admitted.
