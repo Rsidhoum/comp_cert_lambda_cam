@@ -176,3 +176,17 @@ apply reduc_cas_base.
 remove_simple_cam_reduc.
 apply reduc_ref.
 Qed.
+
+Fixpoint exec (A : Set) (S : stack A)  (C : code A) : ((stack A) * (code A)) :=
+	match (S, C) with
+	| (S', nil) => (S', nil)
+	| (((paire _ s t) :: S'), ((fst _) :: C')) => exec A (s :: S') C'
+	| (((paire _ s t) :: S'), ((snd _) :: C')) => exec A (t :: S') C'
+	| ((s :: S'), ((quote _ c) :: C')) => exec A ((constante A c) :: S') C'
+	| ((s :: S'), ((cur _ C') :: C1)) => exec A (((avec_code A) C' s) :: S') C1
+	| ((s :: S'), ((push _) :: C')) => exec A (s :: s :: S') C'
+	| ((s :: t :: S'),  ((swap _) :: C')) => exec A (t :: s :: S') C'
+	| ((t :: s :: S'), ((cons _) :: C')) => exec A ((paire A s t) :: S') C'
+	| ((t :: (avec_code _ C' s) :: S'), ((app _) :: C1)) => exec A (((paire A) s t) :: S') (C'++C1)
+	| (_, _) => (S, C)
+end.
