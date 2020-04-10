@@ -177,7 +177,7 @@ remove_simple_cam_reduc.
 apply reduc_ref.
 Qed.
 
-Fixpoint exec (A : Set) (S : stack A)  (C : code A) : ((stack A) * (code A)) :=
+Fixpoint exec (A : Set) (S : stack A)  (C : code A) {C}: ((stack A) * (code A)) :=
 	match (S, C) with
 	| (S', nil) => (S', nil)
 	| (((paire _ s t) :: S'), ((fst _) :: C')) => exec A (s :: S') C'
