@@ -37,79 +37,6 @@ Inductive cam_reduction (A : Set) : (stack A) -> (code A) -> (stack A) -> (code 
 | reduc_app : forall (s t : (stack_element A)) (S S' : (stack A)) (C C1 : (code A)), 
 		S' = (((paire A) s t)::S) -> (cam_reduction A) (t::((avec_code A) C s)::S) ((app A)::C1) S' (C++C1) (*Ici faut-il aussi remplacer (C++C1) par C' et mettre quelque chose de similaire à S'*).
 
-Lemma pourFst:
-	forall (s t : (stack_element nat)) (S S' : (stack nat)) (C : (code nat)),
-	(cam_reduction nat) (((paire nat) s t)::S) ((fst nat)::C) (s::S) C.
-Proof.
-intros.
-apply reduc_fst.
-trivial.
-Qed.
-
-Lemma pourSnd:
-	forall (s t : (stack_element nat)) (S S' : (stack nat)) (C : (code nat)),
-	(cam_reduction nat) (((paire nat) s t)::S) ((snd nat)::C) (t::S) C.
-Proof.
-intros.
-apply reduc_snd.
-trivial.
-Qed.
-
-Lemma pourQuote :
-	forall (S : (stack nat)) (C : (code nat)) (s : (stack_element nat)), 
-	(cam_reduction nat) (s::S) ((quote nat) 0::C) ((constante nat) 0::S) C.
-Proof.
-intros.
-apply reduc_quote.
-trivial.
-Qed.
-
-Lemma pourCur :
-	forall (S : (stack nat)) (C C1 : (code nat)) (s : (stack_element nat)), 
-	(cam_reduction nat) (s::S) (((cur nat) C)::C1)  (((avec_code nat) C s)::S) C1.
-Proof.
-intros.
-apply reduc_cur.
-trivial.
-Qed.
-
-Lemma pourPush :
-	forall (S : (stack nat)) (C : (code nat)) (s : (stack_element nat)), 
-	(cam_reduction nat) (s::S) ((push nat)::C) (s::s::S) C.
-Proof.
-intros.
-apply reduc_push.
-trivial.
-trivial.
-Qed.
-
-Lemma pourSwap : 
-	forall (S : (stack nat)) (C : (code nat)) (s1 s2 : (stack_element nat)),
-	(cam_reduction nat) (s1::s2::S) ((swap nat)::C) (s2::s1::S) C.
-Proof.
-intros.
-apply reduc_swap.
-trivial.
-Qed.
-
-Lemma pourCons : 
-	forall (S : (stack nat)) (C : (code nat)) (s1 s2 : (stack_element nat)),
-	(cam_reduction nat) (s2::s1::S) ((cons nat)::C) (((paire nat) s1 s2)::S) C.
-Proof.
-intros.
-apply reduc_cons.
-trivial.
-Qed.
-
-Lemma pourApp :
-	forall (S : (stack nat)) (C C1 : (code nat)) (s t : (stack_element nat)),
-	(cam_reduction nat) (t::((avec_code nat) C s)::S) ((app nat)::C1) (((paire nat) s t)::S) (C++C1).
-Proof.
-intros.
-apply reduc_app.
-trivial.
-Qed.
-
 Inductive cam_reduction_ref_trans (A : Set) : (stack A) -> (code A) -> (stack A) -> (code A) -> Prop :=
 | reduc_cas_base : forall (S S' : (stack A)) (C C' : (code A)),
 	(cam_reduction A) S C S' C' -> (cam_reduction_ref_trans A) S C S' C'
@@ -128,7 +55,7 @@ Ltac remove_simple_cam_reduc :=
   | |- context[cam_reduction ?A (?s::?S) (push ?A::?C) (?s::?s::?S) ?C] => apply reduc_push;trivial;trivial
   | |- context[cam_reduction ?A (?s::?t::?S) (swap ?A::?C) (?t::?s::?S) ?C] => apply reduc_swap;trivial
   | |- context[cam_reduction ?A (?s::?t::?S) (cons ?A::?C) (paire ?A ?t ?s::?S) ?C] => apply reduc_cons;trivial
-  | |- context[cam_reduction ?A (?t::(avec_code ?A ?C ?s)::?S) (app ?A::?C1) ((paire ?A ?s ?t)::?S) (?C++?C1)] => apply reduc_app;trivial
+  | |- context[cam_reduction _ ( _::(avec_code _ _ _)::_) (app _::_) ((paire _ _ _)::_) _] => apply reduc_app;trivial
 end.
 
 (*s.S | push;(quote 0);C -> 0.s.S | C*)
@@ -156,8 +83,7 @@ apply reduc_cas_base.
 remove_simple_cam_reduc.
 apply reduc_trans with (((paire nat) s t)::S) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::C).
 apply reduc_cas_base.
-apply reduc_app.
-trivial.
+remove_simple_cam_reduc.
 remove_simple_cam_reduc.
 apply reduc_trans with (((paire nat) s t)::((paire nat) s t)::S) ((fst nat)::(swap nat)::(snd nat)::(swap nat)::C).
 apply reduc_cas_base.
