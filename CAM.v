@@ -46,17 +46,8 @@ Inductive cam_reduction_ref_trans (A : Set) : (stack A) -> (code A) -> (stack A)
 	(cam_reduction_ref_trans A) S C S' C' -> (cam_reduction_ref_trans A) S' C' S'' C'' -> (cam_reduction_ref_trans A) S C S'' C''.
 
 Ltac remove_simple_cam_reduc :=
-  repeat
-  match goal with
-  | |- context[cam_reduction ?A (paire ?A ?s ?t::?S) (fst ?A::?C) (?s::?S) ?C] => apply reduc_fst;trivial
-  | |- context[cam_reduction ?A (paire ?A ?s ?t::?S) (snd ?A::?C) (?t::?S) ?C] => apply reduc_snd;trivial
-  | |- context[cam_reduction ?A (?s::?S) (quote ?A ?c::?C) ((constante ?A ?c)::?S) ?C] => apply reduc_quote;trivial
-  | |- context[cam_reduction ?A (?s::?S) ((cur ?A ?C)::?C1) (avec_code ?A ?C ?s::?S) ?C1] => apply reduc_cur;trivial
-  | |- context[cam_reduction ?A (?s::?S) (push ?A::?C) (?s::?s::?S) ?C] => apply reduc_push;trivial;trivial
-  | |- context[cam_reduction ?A (?s::?t::?S) (swap ?A::?C) (?t::?s::?S) ?C] => apply reduc_swap;trivial
-  | |- context[cam_reduction ?A (?s::?t::?S) (cons ?A::?C) (paire ?A ?t ?s::?S) ?C] => apply reduc_cons;trivial
-  | |- context[cam_reduction _ ( _::(avec_code _ _ _)::_) (app _::_) ((paire _ _ _)::_) _] => apply reduc_app;trivial
-end.
+  try repeat
+  apply reduc_fst || apply reduc_snd || apply reduc_quote || apply reduc_cur || apply reduc_push || apply reduc_swap || apply reduc_cons || apply reduc_app || trivial.
 
 (*s.S | push;(quote 0);C -> 0.s.S | C*)
 Lemma pourAjoutZero :
@@ -102,17 +93,3 @@ apply reduc_cas_base.
 remove_simple_cam_reduc.
 apply reduc_ref.
 Qed.
-
-Fixpoint exec (A : Set) (S : stack A)  (C : code A) {C}: ((stack A) * (code A)) :=
-	match (S, C) with
-	| (S', nil) => (S', nil)
-	| (((paire _ s t) :: S'), ((fst _) :: C')) => exec A (s :: S') C'
-	| (((paire _ s t) :: S'), ((snd _) :: C')) => exec A (t :: S') C'
-	| ((s :: S'), ((quote _ c) :: C')) => exec A ((constante A c) :: S') C'
-	| ((s :: S'), ((cur _ C') :: C1)) => exec A (((avec_code A) C' s) :: S') C1
-	| ((s :: S'), ((push _) :: C')) => exec A (s :: s :: S') C'
-	| ((s :: t :: S'),  ((swap _) :: C')) => exec A (t :: s :: S') C'
-	| ((t :: s :: S'), ((cons _) :: C')) => exec A ((paire A s t) :: S') C'
-	| ((t :: (avec_code _ C' s) :: S'), ((app _) :: C1)) => exec A (((paire A) s t) :: S') (C'++C1)
-	| (_, _) => (S, C)
-end.
