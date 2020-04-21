@@ -93,5 +93,7 @@ Qed.
 Lemma pourFonctionInutile :
 	forall (S : (stack nat)) (C : (code nat)) (s t : (stack_element nat)),
 	(cam_reduction_ref_trans nat) (s::t::S) (((cur nat) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::nil))::(swap nat)::(app nat)::C) (s::t::S) C.
+Proof.
 intros.
 simplification_cam.
+Qed.
