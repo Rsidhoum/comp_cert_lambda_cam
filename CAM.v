@@ -35,7 +35,7 @@ Inductive cam_reduction (A : Set) : (stack A) -> (code A) -> (stack A) -> (code 
 | reduc_cons : forall (s t : (stack_element A)) (S S' : (stack A)) (C:(code A)), 
 		S' = (((paire A) s t)::S) -> (cam_reduction A) (t::s::S) ((cons A)::C) S' C
 | reduc_app : forall (s t : (stack_element A)) (S S' : (stack A)) (C C1 : (code A)), 
-		S' = (((paire A) s t)::S) -> (cam_reduction A) (t::((avec_code A) C s)::S) ((app A)::C1) S' (C++C1) (*Ici faut-il aussi remplacer (C++C1) par C' et mettre quelque chose de similaire à S'*).
+		S' = (((paire A) s t)::S) -> (cam_reduction A) (t::((avec_code A) C s)::S) ((app A)::C1) S' (C++C1).
 
 Inductive cam_reduction_ref_trans (A : Set) : (stack A) -> (code A) -> (stack A) -> (code A) -> Prop :=
 | reduc_cas_base : forall (S S' : (stack A)) (C C' : (code A)),
@@ -49,6 +49,35 @@ Ltac remove_simple_cam_reduc :=
   try repeat
   apply reduc_fst || apply reduc_snd || apply reduc_quote || apply reduc_cur || apply reduc_push || apply reduc_swap || apply reduc_cons || apply reduc_app || trivial.
 
+Ltac faire_trans :=
+	match goal with
+	| |- context[cam_reduction_ref_trans ?A ((paire ?A ?s ?t)::?S) ((fst ?A)::?C) _ _] 
+		=> apply reduc_trans with (s::S) C
+	| |- context[cam_reduction_ref_trans ?A ((paire ?A ?s ?t)::?S) ((snd ?A)::?C) _ _] 
+		=> apply reduc_trans with (t::S) C
+	| |- context[cam_reduction_ref_trans ?A (?s::?S) ((quote ?A ?c)::?C) _ _] 
+		=> apply reduc_trans with ((constante A c)::S) C
+	| |- context[cam_reduction_ref_trans ?A (?s::?S) ((cur ?A ?C)::?C1) _ _] 
+		=> apply reduc_trans with ((avec_code A C s)::S) C1
+	| |- context[cam_reduction_ref_trans ?A (?s::?S) ((push ?A)::?C) _ _] 
+		=> apply reduc_trans with (s::s::S) C
+	| |- context[cam_reduction_ref_trans ?A (?t::?s::?S) ((swap ?A)::?C) _ _] 
+		=> apply reduc_trans with (s::t::S) C
+	| |- context[cam_reduction_ref_trans ?A (?t::?s::?S) ((cons ?A)::?C) _ _] 
+		=> apply reduc_trans with ((paire A s t)::S) C
+	| |- context[cam_reduction_ref_trans ?A (?t::(avec_code ?A ?C ?s)::?S) ((app ?A)::?C1) _ _] 
+		=> apply reduc_trans with ((paire A s t)::S) (C++C1);simpl
+end.
+
+Ltac faire_une_etape :=
+	faire_trans;
+	only 1 : [> apply reduc_cas_base;
+	remove_simple_cam_reduc].
+	
+Ltac simplification_cam :=
+	try repeat
+	apply reduc_ref || faire_une_etape.
+	
 (*s.S | push;(quote 0);C -> 0.s.S | C*)
 Lemma pourAjoutZero :
 	forall (S : (stack nat)) (C : (code nat)) (s : (stack_element nat)), 
@@ -64,32 +93,5 @@ Qed.
 Lemma pourFonctionInutile :
 	forall (S : (stack nat)) (C : (code nat)) (s t : (stack_element nat)),
 	(cam_reduction_ref_trans nat) (s::t::S) (((cur nat) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::nil))::(swap nat)::(app nat)::C) (s::t::S) C.
-Proof.
 intros.
-apply reduc_trans with (((avec_code nat) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::nil) s)::t::S) ((swap nat)::(app nat)::C).
-apply reduc_cas_base.
-remove_simple_cam_reduc.
-apply reduc_trans with (t::((avec_code nat) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::nil) s)::S) ((app nat)::C).
-apply reduc_cas_base.
-remove_simple_cam_reduc.
-apply reduc_trans with (((paire nat) s t)::S) ((push nat)::(fst nat)::(swap nat)::(snd nat)::(swap nat)::C).
-apply reduc_cas_base.
-remove_simple_cam_reduc.
-remove_simple_cam_reduc.
-apply reduc_trans with (((paire nat) s t)::((paire nat) s t)::S) ((fst nat)::(swap nat)::(snd nat)::(swap nat)::C).
-apply reduc_cas_base.
-remove_simple_cam_reduc.
-apply reduc_trans with (s::((paire nat) s t)::S) ((swap nat)::(snd nat)::(swap nat)::C).
-apply reduc_cas_base.
-remove_simple_cam_reduc.
-apply reduc_trans with (((paire nat) s t)::s::S) ((snd nat)::(swap nat)::C).
-apply reduc_cas_base.
-remove_simple_cam_reduc.
-apply reduc_trans with (t::s::S) ((swap nat)::C).
-apply reduc_cas_base.
-remove_simple_cam_reduc.
-apply reduc_trans with (s::t::S) C.
-apply reduc_cas_base.
-remove_simple_cam_reduc.
-apply reduc_ref.
-Qed.
+simplification_cam.
