@@ -1,0 +1,64 @@
+(λx.x) y
+
+C = traduction de "x"
+C1 = traduction de "y" = quote y
+
+push;(cur C);swap; C1; app
+
+s : push
+s.s : cur C
+(C : s).s : swap
+s.(C : s) : C1 = quote y
+y.(C : s) : app
+(s, y) : C = snd
+y
+
+pas mal.
+
+===============
+
+M N : push; [M]; swap; [N]; app
+
+(((λx.λy.x) c1) c2)
+
+push; [((λx.λy.x) c1)]; swap; [c2]; app
+push; (push; [λx.λy.x]; swap; [c1]; app); swap; [c2]; app
+push; push; [λx.λy.x]; swap; quote c1; app; swap; quote c2; app
+push; push; Cur [λy.x]; swap; quote c1; app; swap; quote c2; app
+push; push; Cur (Cur [x]); swap; quote c1; app; swap; quote c2; app
+push; push; Cur (Cur snd); swap; quote c1; app; swap; quote c2; app
+
+s : push
+s.s : push
+s.s.s : Cur (Cur snd)
+((Cur snd):s).s.s : swap
+s.((Cur snd):s).s : quote c1
+c1.((Cur snd):s).s : app
+(s,c1).s : Cur snd;...
+(snd:(s,c1)).s : swap
+s.(snd:(s,c1)) : quote c2
+c2.(snd:(s,c1)) : app
+((s,c1),c2) : snd
+c2 faux
+
+push;push;(cur (cur fst;snd));swap;(quote c1);app;swap;(quote c2);app
+
+
+(((λ.λ.1) c1) c2)
+
+(((s,c1),c2),c3)
+
+0 : snd
+1 : fst; snd
+2 : fst; fst; snd ...
+
+Exception in thread "main" exceptions.InvalidInstructionFormatException: Format is invalid, found '(fst;snd)', but it is not a valid CAM instruction
+	at instructions.Instruction.toList(Instruction.java:66)
+	at structures.Code.<init>(Code.java:20)
+	at instructions.Instruction.toList(Instruction.java:32)
+	at structures.Code.<init>(Code.java:20)
+	at engine.Engine.<init>(Engine.java:31)
+	at main.Main.main(Main.java:25)
+
+
+((λx.((λy.y) c1)) c2) à tester
