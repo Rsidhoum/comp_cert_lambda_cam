@@ -28,7 +28,7 @@ public interface Instruction
 				}
 				else
 				{
-					String newCode = names.get(i).substring(5, findClosingParen(names.get(i))).replaceFirst("cur ", "");
+					String newCode = names.get(i).substring(5, findClosingParen(names.get(i)));
 					list.add(new Cur(new Code(newCode)));
 					System.out.println();
 				}
@@ -71,7 +71,7 @@ public interface Instruction
 		return list;
 	}
 
-	public static List<String> getSplit(String code)
+	private static List<String> getSplit(String code)
 	{
 		List<String> list = new ArrayList<String>();
 
@@ -93,7 +93,7 @@ public interface Instruction
 		return list;
 	}
 
-	public static int findNextInstruction(String code)
+	private static int findNextInstruction(String code)
 	{
 		if (code.charAt(0) == '(')
 		{
@@ -112,7 +112,7 @@ public interface Instruction
 		}
 	}
 
-	public static int findClosingParen(String text)
+	private static int findClosingParen(String text)
 	{
 		int closePos = 0;
 		int counter = 1;
