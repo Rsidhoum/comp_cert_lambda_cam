@@ -35,12 +35,10 @@ match t with
   end
 end.
 
-Compute traduction (lapp fact l_3).
 Definition empty_stack := (constantel (var 0))::nil.
 
 Functional Scheme traduction_ind := Induction for traduction Sort Prop.
-(*
 Lemma correction : forall (t t' : lambda_term) (c1 c2 : code lambda_term), t ->β t' -> traduction t = Some c1 -> traduction t' = Some c2 -> exists S : stackl, cam_reduction_ref_trans lambda_term empty_stack c1 S c2.
 Proof.
 intros.
-functional induction (traduction t); functional induction (traduction t'); inversion H.*)
+functional induction (traduction t); functional induction (traduction t'); inversion H.
