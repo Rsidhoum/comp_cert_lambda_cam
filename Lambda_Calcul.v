@@ -204,76 +204,8 @@ apply Beta_ref.
 apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
 Qed.
 
-Goal (lapp fact l_3) =β l_6.
-Proof.
-apply Beta_sym with (get_redex fact l_3); simpl.
-apply Beta_redex_sym; apply Beta_redex_ref_trans; apply correction_beta_reduction; reflexivity.
-apply Beta_sym with l_6; try (apply Beta_redex_sym; apply Beta_ref).
-apply Beta_sym with (get_redex l_3
-(λ λ λ (lapp)
-           ((lapp) (ref 0)
-              (λ λ (lapp) (ref 1) ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-           (λ (lapp) (ref 3) ((lapp) (ref 2) (ref 0))))
-); simpl.
-apply Beta_redex_sym; apply Beta_redex_ref_trans; apply correction_beta_reduction; reflexivity.
-apply Beta_sym with l_6; try (apply Beta_redex_sym; apply Beta_ref).
-apply Beta_sym with
-(λ (lapp)
-     (λ λ λ (lapp)
-              ((lapp) (ref 0)
-                 (λ λ (lapp) (ref 1) ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-              (λ (lapp) (ref 3) ((lapp) (ref 2) (ref 0))))
-     ((lapp)
-        (λ λ λ (lapp)
-                 ((lapp) (ref 0)
-                    (λ λ (lapp) (ref 1)
-                           ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-                 (λ (lapp) (ref 3) ((lapp) (ref 2) (ref 0))))
-                 (get_redex (λ λ λ (lapp)
-                    ((lapp) (ref 0)
-                       (λ λ (lapp) (ref 1)
-                              ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-                    (λ (lapp) (ref 3) ((lapp) (ref 2) (ref 0))))
-                    (ref 0)))); simpl.
-
-apply Beta_redex_sym; apply Beta_cong_lambda; apply Beta_cong_app; try apply Beta_ref. apply Beta_cong_app; try apply Beta_ref.
-apply Beta_redex_ref_trans; apply correction_beta_reduction; reflexivity.
-apply Beta_sym with l_6; try (apply Beta_redex_sym; apply Beta_ref).
-apply Beta_sym with
-(λ (lapp)
-     (λ λ λ (lapp)
-              ((lapp) (ref 0)
-                 (λ λ (lapp) (ref 1) ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-              (λ (lapp) (ref 3) ((lapp) (ref 2) (ref 0))))
-              (get_redex
-              (λ λ λ (lapp)
-                 ((lapp) (ref 0)
-                    (λ λ (lapp) (ref 1)
-                           ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-                 (λ (lapp) (ref 3) ((lapp) (ref 2) (ref 0))))
-              (λ λ (lapp)
-               ((lapp) (ref 0)
-                  (λ λ (lapp) (ref 1) ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-               (λ (lapp) (ref 0) ((lapp) (ref 2) (ref 0)))))); simpl.
-
-apply Beta_redex_sym; apply Beta_cong_lambda; apply Beta_cong_app; try apply Beta_ref.
-apply Beta_redex_ref_trans; apply correction_beta_reduction; reflexivity.
-apply Beta_sym with l_6; try (apply Beta_redex_sym; apply Beta_ref).
-apply Beta_sym with
-(λ (lapp)
-     (λ λ λ (lapp)
-              ((lapp) (ref 0)
-                 (λ λ (lapp) (ref 1) ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-              (λ (lapp) (ref 3) ((lapp) (ref 2) (ref 0))))
-     (λ λ (lapp)
-            ((lapp) (ref 0)
-               (λ λ (lapp) (ref 1) ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-               (get_redex  (λ λ (lapp)
-                        ((lapp) (ref 0)
-                           (λ λ (lapp) (ref 1)
-                                  ((lapp) ((lapp) (ref 3) (ref 1)) (ref 0))))
-                        (λ (lapp) (ref 0) ((lapp) (ref 2) (ref 0))))
-((lapp) (ref 2) (ref 0))))); simpl.
-apply Beta_redex_sym; apply Beta_cong_lambda; apply Beta_cong_app; try apply Beta_ref.
-repeat apply Beta_cong_lambda. apply Beta_cong_app; try apply Beta_ref. apply Beta_cong_lambda; apply Beta_cong_app.
-Admitted.
+Inductive innermost_strategy : lambda_term -> lambda_term -> Prop :=
+| in_br : forall t t' : lambda_term,
+    beta_reduction t t' -> innermost_strategy t t'
+| in_cong_app : forall t1 t2 t1' t2' : lambda_term,
+    innermost_strategy t1 t1' -> innermost_strategy t2 t2' -> innermost_strategy (lapp t1 t2) (lapp t1' t2').
