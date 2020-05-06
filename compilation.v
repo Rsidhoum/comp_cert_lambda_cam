@@ -36,8 +36,25 @@ match t with
 end.
 Functional Scheme traduction_ind := Induction for traduction Sort Prop.
 
-Lemma correction : forall (t1 t2 t': lambda_term) (c c' : code lambda_term) (s : stack_element lambda_term), traduction (lapp (λ t1) t2) = Some c -> traduction t' = Some c' -> innermost_strategy (lapp (λ t1) t2) t' -> cam_reduction_ref_trans lambda_term (s::nil) c ((avec_code lambda_term c' s)::nil) nil.
-Proof.
-intros.
-inversion_clear H1. functional induction (traduction (lapp (λ t1) t2)); functional induction (traduction t'); inversion H2.
-cut (c = (pushl :: C ++ swapl :: nil ++ C1 ++ appl :: nil)). cut (c' = (quotel (var n) :: nil)). intros. rewrite H6. rewrite H7.
+Lemma correction_lambda : forall (t1 t2 : lambda_term) (c1 c2 : code lambda_term) (s : stack_element lambda_term),
+  (innermost_strategy_bis t1 t2) -> traduction t1 = Some c1 -> traduction t2 = Some ((curl c2)::nil) ->
+  cam_reduction_ref_trans lambda_term (s::nil) c1 ((avec_code lambda_term c2 s)::nil) nil.
+Abort.
+
+Lemma correction_var: forall (t1 t2 : lambda_term) (n : nat) (c1 : code lambda_term)
+  (s : stack_element lambda_term),
+  (innermost_strategy_bis t1 t2) -> traduction t1 = Some c1 -> traduction t2 = Some ((quotel (variable n))::nil)
+  -> cam_reduction_ref_trans lambda_term (s::nil) c1 ((constante lambda_term (var n))::nil) nil.
+Abort.
+
+Lemma correction_app: forall (t1 t2 : lambda_term) (c1 C C1 c' : code lambda_term)
+  (s : stack_element lambda_term) (s' : stackl),
+  (innermost_strategy_bis t1 t2) -> traduction t1 = Some c1 ->
+  traduction t2 = Some (pushl :: C ++ swapl::nil ++ C1 ++ appl::nil) ->
+  cam_reduction_ref_trans lambda_term (s::nil) C s' c' -> c' <> nil ->
+  cam_reduction_ref_trans lambda_term (s::nil) c1 s' (c' ++ (pushl :: C ++ swapl::nil ++ C1 ++ appl::nil)).
+
+var
+lambda
+(f t1 t2 ... tn)
+==> (((f t1) t2) ... tn)

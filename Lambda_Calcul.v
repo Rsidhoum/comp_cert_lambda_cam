@@ -209,3 +209,25 @@ Inductive innermost_strategy : lambda_term -> lambda_term -> Prop :=
     beta_reduction t t' -> innermost_strategy t t'
 | in_cong_app : forall t1 t2 t1' t2' : lambda_term,
     innermost_strategy t1 t1' -> innermost_strategy t2 t2' -> innermost_strategy (lapp t1 t2) (lapp t1' t2').
+
+Inductive innermost_strategy_bis : lambda_term -> lambda_term -> Prop :=
+| in_lambda : forall t : lambda_term, innermost_strategy_bis (λ t) (λ t)
+| in_variable : forall n : nat, innermost_strategy_bis (var n) (var n)
+| in_app1 : forall t1 t2 t1' t2' t3 : lambda_term, innermost_strategy_bis t1 t1' ->
+  innermost_strategy_bis t2 t2' -> t1' <> (λ t3) -> innermost_strategy_bis (lapp t1 t2) (lapp t1' t2')
+| in_app2 : forall t1 t2 t1' t2' t3 t4 t4': lambda_term, innermost_strategy_bis t1 t1' ->
+  innermost_strategy_bis t2 t2' -> t1' = (λ t3) -> (beta_reduction (lapp t1' t2') t4) ->
+  innermost_strategy_bis t4 t4' ->
+  innermost_strategy_bis (lapp t1 t2) t4'.
+
+Lemma test0 : innermost_strategy_bis (lapp id x) x.
+Proof.
+  unfold id, x.
+  eapply in_app2.
+  apply in_lambda.
+  apply in_variable.
+  auto.
+  apply Beta_redex.
+  apply br_reference.
+  apply in_variable.
+Qed.
