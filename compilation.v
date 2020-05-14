@@ -39,7 +39,17 @@ Functional Scheme traduction_ind := Induction for traduction Sort Prop.
 Lemma correction_lambda : forall (t1 t2 : lambda_term) (c1 c2 : code lambda_term) (s : stack_element lambda_term),
   (innermost_strategy_bis t1 t2) -> traduction t1 = Some c1 -> traduction t2 = Some ((curl c2)::nil) ->
   cam_reduction_ref_trans lambda_term (s::nil) c1 ((avec_code lambda_term c2 s)::nil) nil.
-Abort.
+	Proof.
+	intros.
+	inversion H. rewrite <-H2 in H0. rewrite <-H3 in H1.
+	functional induction (traduction (λ t)); try discriminate.
+	induction n; discriminate.
+	inversion_clear H0. inversion_clear H1. simplification_cam.
+	rewrite <-H2 in H0. rewrite <-H3 in H1. inversion_clear H0. inversion_clear H1.
+	rewrite <-H6 in H1. inversion H1. destruct (traduction t1'); destruct (traduction t2'); discriminate.
+	rewrite <-H7 in H0. inversion H0. destruct (traduction t0); destruct (traduction t3); try discriminate. inversion_clear H10.
+	
+	
 
 Lemma correction_var: forall (t1 t2 : lambda_term) (n : nat) (c1 : code lambda_term)
   (s : stack_element lambda_term),
