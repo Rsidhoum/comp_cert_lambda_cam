@@ -12,6 +12,15 @@ Notation "'ref' t" := (reference t) (at level 85, right associativity).
 Notation "'λ' t" := (abstraction t) (at level 99, right associativity).
 Notation "'lapp'" := application (at level 79).
 
+Inductive well_formed_count : nat -> lambda_term -> Prop :=
+| variable_wf : forall (n m : nat), well_formed_count n (variable m)
+| reference_wf : forall (n m : nat), m < n -> well_formed_count n (reference m)
+| abstraction_wf : forall (n : nat) (t : lambda_term), well_formed_count (S n) t -> well_formed_count n (λ t)
+| application_wf : forall (n : nat) (t1 t2 : lambda_term), well_formed_count n t1 -> well_formed_count n t2 ->
+  well_formed_count n (lapp t1 t2).
+
+Definition well_formed (t : lambda_term) := well_formed_count 0 t.
+
 Fixpoint br_fix (n : nat) (t u : lambda_term) : lambda_term :=
   match t with
   (* variable libre *)
@@ -118,6 +127,17 @@ Definition ifthenelse := (λ (λ (λ (lapp (lapp (ref 2) (ref 1))) (ref 0)))).
 Definition x := (var 0).
 Definition y := (var 1).
 
+(* Well-formedness *)
+
+Lemma vrai_wf : well_formed vrai.
+Proof.
+  unfold well_formed, vrai.
+  apply abstraction_wf.
+  apply abstraction_wf.
+  apply reference_wf.
+  auto.
+Qed.
+
 Lemma identity : forall t : lambda_term, lapp id t ->β t.
 Proof.
 intros.
@@ -205,22 +225,16 @@ apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
 Qed.
 
 Inductive innermost_strategy : lambda_term -> lambda_term -> Prop :=
-| in_br : forall t t' : lambda_term,
-    beta_reduction t t' -> innermost_strategy t t'
-| in_cong_app : forall t1 t2 t1' t2' : lambda_term,
-    innermost_strategy t1 t1' -> innermost_strategy t2 t2' -> innermost_strategy (lapp t1 t2) (lapp t1' t2').
+| in_lambda : forall t : lambda_term, innermost_strategy (λ t) (λ t)
+| in_variable : forall n : nat, innermost_strategy (var n) (var n)
+| in_app1 : forall t1 t2 t1' t2' t3 : lambda_term, innermost_strategy t1 t1' ->
+  innermost_strategy t2 t2' -> t1' <> (λ t3) -> innermost_strategy (lapp t1 t2) (lapp t1' t2')
+| in_app2 : forall t1 t2 t1' t2' t3 t4 t4': lambda_term, innermost_strategy t1 t1' ->
+  innermost_strategy t2 t2' -> t1' = (λ t3) -> (beta_reduction (lapp t1' t2') t4) ->
+  innermost_strategy t4 t4' ->
+  innermost_strategy (lapp t1 t2) t4'.
 
-Inductive innermost_strategy_bis : lambda_term -> lambda_term -> Prop :=
-| in_lambda : forall t : lambda_term, innermost_strategy_bis (λ t) (λ t)
-| in_variable : forall n : nat, innermost_strategy_bis (var n) (var n)
-| in_app1 : forall t1 t2 t1' t2' t3 : lambda_term, innermost_strategy_bis t1 t1' ->
-  innermost_strategy_bis t2 t2' -> t1' <> (λ t3) -> innermost_strategy_bis (lapp t1 t2) (lapp t1' t2')
-| in_app2 : forall t1 t2 t1' t2' t3 t4 t4': lambda_term, innermost_strategy_bis t1 t1' ->
-  innermost_strategy_bis t2 t2' -> t1' = (λ t3) -> (beta_reduction (lapp t1' t2') t4) ->
-  innermost_strategy_bis t4 t4' ->
-  innermost_strategy_bis (lapp t1 t2) t4'.
-
-Lemma test0 : innermost_strategy_bis (lapp id x) x.
+Lemma test0 : innermost_strategy (lapp id x) x.
 Proof.
   unfold id, x.
   eapply in_app2.
@@ -231,3 +245,6 @@ Proof.
   apply br_reference.
   apply in_variable.
 Qed.
+
+Axiom innermost_strategy_well_formed : forall (t1 t2 : lambda_term),
+  well_formed t1 -> innermost_strategy t1 t2 -> well_formed t2.

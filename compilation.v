@@ -19,11 +19,11 @@ Fixpoint acc (n : nat) : (code lambda_term) :=
   | S m => fstl :: (acc m)
   end.
 
-Fixpoint traduction (t : lambda_term) : option (code lambda_term) :=
+(*Fixpoint traduction (t : lambda_term) : option (code lambda_term) :=
 match t with
-|variable n => Some ((quotel (variable n))::nil)
-|ref n => Some (acc n)
-|abstraction u =>
+| variable n => Some ((quotel (variable n))::nil)
+| ref n => Some (acc n)
+| λ u =>
     match traduction u with
     | Some C => Some ((curl C)::nil)
     | _ => None
@@ -33,14 +33,68 @@ match t with
     | (Some C, Some C1) => Some (pushl :: C ++ swapl::nil ++ C1 ++ appl::nil)
     | (_, _) => None
   end
+end.*)
+
+Fixpoint traduction (t : lambda_term) : code lambda_term :=
+match t with
+| var n => (quotel (variable n))::nil
+| ref n => acc n
+| λ u => (curl (traduction u))::nil
+| lapp u v => (pushl :: (traduction u) ++ swapl::nil ++ (traduction v) ++ appl::nil)
 end.
+
 Functional Scheme traduction_ind := Induction for traduction Sort Prop.
 
-Lemma correction_lambda : forall (t1 t2 : lambda_term) (c1 c2 : code lambda_term) (s : stack_element lambda_term),
-  (innermost_strategy_bis t1 t2) -> traduction t1 = Some c1 -> traduction t2 = Some ((curl c2)::nil) ->
-  cam_reduction_ref_trans lambda_term (s::nil) c1 ((avec_code lambda_term c2 s)::nil) nil.
+Lemma correction_lambda : forall (t1 t2 : lambda_term),
+  (innermost_strategy t1 t2) -> forall (c2 : code lambda_term) (s : stack_element lambda_term),
+  (well_formed t1) -> traduction t2 = ((curl c2)::nil) ->
+  cam_reduction_ref_trans lambda_term (s::nil) (traduction t1) ((avec_code lambda_term c2 s)::nil) nil.
 	Proof.
+	do 3 intro.
+	elim H.
+	
+	Focus 4.
+	simpl.
 	intros.
+
+	simpl.
+	intros.
+	rewrite H1.
+	simplification_cam.
+  Focus 3.
+  simpl.
+  intros.
+
+
+	
+	rewrite H1 in H2.
+	rewrite H2.
+	simplification_cam.
+	simpl.
+	intros.
+	inversion H2.
+	simpl.
+	intros.
+	inversion H7.
+	simpl.
+	intros.
+	apply H8.
+	2: apply H10.
+	rewrite <- H9.
+	rewrite H5 in H6.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	intros.
+	elim H.
+	
 	inversion H. rewrite <-H2 in H0. rewrite <-H3 in H1.
 	functional induction (traduction (λ t)); try discriminate.
 	induction n; discriminate.
