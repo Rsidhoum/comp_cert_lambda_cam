@@ -50,6 +50,7 @@ Lemma correction_lambda : forall (t1 t2 : lambda_term),
   (well_formed t1) -> traduction t2 = ((curl c2)::nil) ->
   cam_reduction_ref_trans lambda_term (s::nil) (traduction t1) ((avec_code lambda_term c2 s)::nil) nil.
 	Proof.
+<<<<<<< HEAD
 	do 3 intro.
 	elim H.
 	
@@ -104,6 +105,7 @@ Lemma correction_lambda : forall (t1 t2 : lambda_term),
 	rewrite <-H7 in H0. inversion H0. destruct (traduction t0); destruct (traduction t3); try discriminate. inversion_clear H10.
 	
 	
+	Abort.
 
 Lemma correction_var: forall (t1 t2 : lambda_term) (n : nat) (c1 : code lambda_term)
   (s : stack_element lambda_term),
