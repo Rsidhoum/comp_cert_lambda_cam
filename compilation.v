@@ -50,11 +50,20 @@ Lemma correction_lambda : forall (t1 t2 : lambda_term),
   (well_formed t1) -> traduction t2 = ((curl c2)::nil) ->
   cam_reduction_ref_trans lambda_term (s::nil) (traduction t1) ((avec_code lambda_term c2 s)::nil) nil.
 	Proof.
-<<<<<<< HEAD
 	do 3 intro.
 	elim H.
-	
-	Focus 4.
+	simpl.
+	intros.
+	inversion H1.
+	rewrite H3.
+	simplification_cam.
+	simpl.
+	intros.
+	inversion H1.
+	simpl.
+	intros.
+	inversion H6.
+
 	simpl.
 	intros.
 
