@@ -249,16 +249,56 @@ Proof.
   apply in_variable.
 Qed.
 
+Lemma wf_abstraction : forall (t : lambda_term) (n : nat), well_formed_count n t -> well_formed_count n (λ t).
+	Proof.
+	intros.
+	apply abstraction_wf.
+	induction t.
+	apply variable_wf.
+	inversion H. apply reference_wf. apply le_S. apply H2.
+	inversion H. apply abstraction_wf.
+	admit.
+	inversion H.
+	apply application_wf.
+	apply IHt1. apply H3.
+	apply IHt2. apply H4.
+	Admitted.
+
+Lemma wf_succ : forall (t1 : lambda_term) (n : nat), well_formed_count n t1 -> well_formed_count (S n) t1.
+	Proof.
+	intros.
+	induction t1.
+	apply variable_wf.
+	inversion H.
+	apply reference_wf.
+	apply le_S. apply H2.
+	inversion H.
+	inversion H2.
+	apply abstraction_wf.
+	apply variable_wf.
+	apply abstraction_wf.
+	apply reference_wf.
+	apply le_S. apply H3.
+	apply abstraction_wf.
+	apply wf_abstraction.
+	apply H3.
+	apply wf_abstraction.
+	apply application_wf. apply H3. apply H4.
+	inversion H.
+	apply application_wf.
+	apply IHt1_1. apply H3.
+	apply IHt1_2. apply H4.
+	Qed.
+	
 Lemma innermost_strategy_well_formed : forall (t1 t2 : lambda_term),
   well_formed t1 -> innermost_strategy t1 t2 -> well_formed t2.
   Proof.
   unfold well_formed.
   intros.
   induction t1.
-  inversion H0.
-  apply H.
+  inversion H0. apply variable_wf.
   inversion H. inversion H3.
+  inversion H0. apply H.
   inversion H0.
-  apply H.
   inversion H.
-Admitted.
+  Admitted.
