@@ -249,5 +249,16 @@ Proof.
   apply in_variable.
 Qed.
 
-Axiom innermost_strategy_well_formed : forall (t1 t2 : lambda_term),
+Lemma innermost_strategy_well_formed : forall (t1 t2 : lambda_term),
   well_formed t1 -> innermost_strategy t1 t2 -> well_formed t2.
+  Proof.
+  unfold well_formed.
+  intros.
+  induction t1.
+  inversion H0.
+  apply H.
+  inversion H. inversion H3.
+  inversion H0.
+  apply H.
+  inversion H.
+Admitted.

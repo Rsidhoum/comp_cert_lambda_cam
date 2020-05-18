@@ -83,8 +83,18 @@ Proof.
 	Proof.
 	do 3 intro.
 	elim H.
-	
-	Focus 4.
+	simpl.
+	intros.
+	inversion H1.
+	rewrite H3.
+	simplification_cam.
+	simpl.
+	intros.
+	inversion H1.
+	simpl.
+	intros.
+	inversion H6.
+
 	simpl.
 	intros.
 
