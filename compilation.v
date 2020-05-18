@@ -45,12 +45,42 @@ end.
 
 Functional Scheme traduction_ind := Induction for traduction Sort Prop.
 
-Lemma correction_lambda : forall (t1 t2 : lambda_term),
+Definition ne_stack (s : stack lambda_term) :=
+  exists (e : stack_element lambda_term), exists (tl : stack lambda_term), s = e :: tl.
+
+Lemma correction : forall (ti tf : lambda_term), (innermost_strategy ti tf) ->
+  forall (ci cf : code lambda_term) (si : stack lambda_term), ne_stack si -> (well_formed ti) ->
+  ci = traduction ti -> cf = traduction tf -> exists sf : stack lambda_term, exists c : code lambda_term,
+    ne_stack sf /\
+    cam_reduction_ref_trans lambda_term si (traduction ti) sf c /\
+    cam_reduction_ref_trans lambda_term si (traduction tf) sf c.
+Proof.
+  do 3 intro.
+  elim H.
+  (* Cas application avec tête non λ *)
+  Focus 3.
+  intros.
+  simpl.
+  elim H5; intros; elim H9; intros; rewrite H10.
+  elim (well_formed_app _ _ H6); intros.
+  elim (H1 (traduction t1) (traduction t1') (x0 :: x0 :: x1)); intros; auto;
+    [ idtac | unfold ne_stack; exists x0; exists (x0 :: x1); auto].
+  elim H13; clear H13; intros; elim H13; clear H13; intros; elim H14; clear H14; intros.
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+(*Lemma correction_lambda : forall (t1 t2 : lambda_term),
   (innermost_strategy t1 t2) -> forall (c2 : code lambda_term) (s : stack_element lambda_term),
   (well_formed t1) -> traduction t2 = ((curl c2)::nil) ->
   cam_reduction_ref_trans lambda_term (s::nil) (traduction t1) ((avec_code lambda_term c2 s)::nil) nil.
 	Proof.
-<<<<<<< HEAD
 	do 3 intro.
 	elim H.
 	
@@ -123,4 +153,4 @@ Lemma correction_app: forall (t1 t2 : lambda_term) (c1 C C1 c' : code lambda_ter
 var
 lambda
 (f t1 t2 ... tn)
-==> (((f t1) t2) ... tn)
+==> (((f t1) t2) ... tn) *)

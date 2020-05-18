@@ -21,6 +21,9 @@ Inductive well_formed_count : nat -> lambda_term -> Prop :=
 
 Definition well_formed (t : lambda_term) := well_formed_count 0 t.
 
+Axiom well_formed_app : forall (t1 t2 : lambda_term),
+  well_formed (lapp t1 t2) -> well_formed t1 /\ well_formed t2.
+  
 Fixpoint br_fix (n : nat) (t u : lambda_term) : lambda_term :=
   match t with
   (* variable libre *)
