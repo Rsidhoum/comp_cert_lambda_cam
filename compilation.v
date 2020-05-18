@@ -57,8 +57,21 @@ Lemma correction : forall (ti tf : lambda_term), (innermost_strategy ti tf) ->
 Proof.
   do 3 intro.
   elim H.
+  intros.
+  exists si.
+  exists (traduction (λ t)).
+  split.
+  apply H0.
+  rewrite <-H2.
+  split; simplification_cam.
+  intros.
+  exists si.
+  exists (traduction (var n)).
+  split.
+  apply H0.
+  split; simplification_cam.
+  
   (* Cas application avec tête non λ *)
-  Focus 3.
   intros.
   simpl.
   elim H5; intros; elim H9; intros; rewrite H10.
@@ -66,7 +79,8 @@ Proof.
   elim (H1 (traduction t1) (traduction t1') (x0 :: x0 :: x1)); intros; auto;
     [ idtac | unfold ne_stack; exists x0; exists (x0 :: x1); auto].
   elim H13; clear H13; intros; elim H13; clear H13; intros; elim H14; clear H14; intros.
-  
+  (* si x2 est une pile qui contient 1 seul élement,
+  on ne peut pas faire swap *)
   
   
   
