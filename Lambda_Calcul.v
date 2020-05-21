@@ -230,8 +230,7 @@ Qed.
 Inductive innermost_strategy : lambda_term -> lambda_term -> Prop :=
 | in_lambda : forall t : lambda_term, innermost_strategy (λ t) (λ t)
 | in_variable : forall n : nat, innermost_strategy (var n) (var n)
-| in_app1 : forall t1 t2 t1' t2' t3 : lambda_term, innermost_strategy t1 t1' ->
-  innermost_strategy t2 t2' -> t1' <> (λ t3) -> innermost_strategy (lapp t1 t2) (lapp t1' t2')
+| in_app1 : forall t1 t2 t1' t3 : lambda_term, innermost_strategy t1 t1' -> t1' <> (λ t3) -> innermost_strategy (lapp t1 t2) (lapp t1' t2)
 | in_app2 : forall t1 t2 t1' t2' t3 t4 t4': lambda_term, innermost_strategy t1 t1' ->
   innermost_strategy t2 t2' -> t1' = (λ t3) -> (beta_reduction (lapp t1' t2') t4) ->
   innermost_strategy t4 t4' ->
@@ -290,6 +289,10 @@ Lemma wf_succ : forall (t1 : lambda_term) (n : nat), well_formed_count n t1 -> w
 	apply IHt1_2. apply H4.
 	Qed.
 	
+Lemma redex_well_formed : forall (t1 t2 : lambda_term), well_formed t1 -> t1 ->*β t2 -> well_formed t2.
+Proof.
+Admitted.
+
 Lemma innermost_strategy_well_formed : forall (t1 t2 : lambda_term),
   well_formed t1 -> innermost_strategy t1 t2 -> well_formed t2.
   Proof.

@@ -58,12 +58,40 @@ Proof.
   (* Cas application avec tête non λ *)
   intros.
   simpl.
-  elim H5; intros; elim H9; intros; rewrite H10.
-  elim (well_formed_app _ _ H6); intros.
+  elim H3; intros; elim H7; intros; rewrite H8.
+  elim (well_formed_app _ _ H4); intros.
   elim (H1 (traduction t1) (traduction t1') (x0 :: x0 :: x1)); intros; auto;
     [ idtac | unfold ne_stack; exists x0; exists (x0 :: x1); auto].
-  elim H13; clear H13; intros; elim H13; clear H13; intros; elim H14; clear H14; intros.
-  (* si x2 est une pile qui contient 1 seul élement,
-  on ne peut pas faire swap *)
-
-Abort.
+  elim H11; clear H11; intros; elim H11; clear H11; intros; elim H12; clear H12; intros.
+  exists x2. exists (x3 ++ swapl :: traduction t2 ++ appl :: nil).
+  split. apply H11.
+  split.
+  faire_une_etape.
+  elim H12; clear H12; intros. elim H12; clear H12; intros;
+  simpl; simplification_cam; rewrite H12; try apply reduc_ref. 
+  cut (((C0 ++ C1 ++ swapl :: traduction t2 ++ appl :: nil) = ((C0 ++ C1) ++ swapl :: traduction t2 ++ appl :: nil))).
+  intros. rewrite H14. apply reduc_ref.
+  elim C0. simpl. reflexivity. intros. simpl. rewrite H14. reflexivity.
+  apply reduc_ref.
+  apply reduc_trans with S' (C' ++ swapl :: traduction t2 ++ appl :: nil).
+  apply H14. apply H16.
+  faire_une_etape.
+  elim H13; clear H13; intros. elim H13; clear H13; intros;
+  simpl; simplification_cam; rewrite H13; try apply reduc_ref. 
+  cut (((C0 ++ C1 ++ swapl :: traduction t2 ++ appl :: nil) = ((C0 ++ C1) ++ swapl :: traduction t2 ++ appl :: nil))).
+  intros. rewrite H14. apply reduc_ref.
+  elim C0. simpl. reflexivity. intros. simpl. rewrite H14. reflexivity.
+  apply reduc_ref.
+  apply reduc_trans with S' (C' ++ swapl :: traduction t2 ++ appl :: nil).
+  apply H14. apply H16.
+	
+	(* Cas application avec tête λ *)
+	intros.
+	simpl.
+	elim H8; intros; elim H12; intros; rewrite H13.
+	elim (well_formed_app _ _ H9); intros.
+	assert (well_formed t4). apply redex_well_formed with (lapp t1' t2'). apply application_wf. apply  innermost_strategy_well_formed with t1. apply H14. apply H0. apply innermost_strategy_well_formed with t2. apply H15. apply H2. apply Beta_redex_ref_trans. apply H5. 
+	elim (H7 (traduction t4) (traduction t4') (x0 :: x1)); intros; auto; [ idtac | unfold ne_stack; exists x0; exists x1; auto ].
+	elim H17; clear H17; intros; inversion_clear H17; inversion_clear H19.
+²
+	
