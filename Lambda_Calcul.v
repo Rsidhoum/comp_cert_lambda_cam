@@ -12,8 +12,9 @@ Notation "'ref' t" := (reference t) (at level 85, right associativity).
 Notation "'λ' t" := (abstraction t) (at level 99, right associativity).
 Notation "'lapp'" := application (at level 79).
 
+(**** Well-formedness ****)
+
 Inductive well_formed_count : nat -> lambda_term -> Prop :=
-| variable_wf : forall (n m : nat), well_formed_count n (variable m)
 | reference_wf : forall (n m : nat), m < n -> well_formed_count n (reference m)
 | abstraction_wf : forall (n : nat) (t : lambda_term), well_formed_count (S n) t -> well_formed_count n (λ t)
 | application_wf : forall (n : nat) (t1 t2 : lambda_term), well_formed_count n t1 -> well_formed_count n t2 ->
@@ -23,7 +24,7 @@ Definition well_formed (t : lambda_term) := well_formed_count 0 t.
 
 Axiom well_formed_app : forall (t1 t2 : lambda_term),
   well_formed (lapp t1 t2) -> well_formed t1 /\ well_formed t2.
-  
+
 Fixpoint br_fix (n : nat) (t u : lambda_term) : lambda_term :=
   match t with
   (* variable libre *)
@@ -122,6 +123,8 @@ Notation "t '->β' u" := (beta_reduction t u) (at level 86, no associativity).
 Notation "t '->*β' u" := (beta_ref_trans t u) (at level 87, no associativity).
 Notation "t '=β' u" := (beta_sym t u) (at level 88, no associativity).
 
+(**** Examples ****)
+
 Definition id := (λ (ref 0)). (* x -> x *)
 Definition vrai := (λ (λ (ref 1))). (* x,y -> x *)
 Definition faux := (λ (λ (ref 0))). (* x,y -> y *)
@@ -130,7 +133,6 @@ Definition ifthenelse := (λ (λ (λ (lapp (lapp (ref 2) (ref 1))) (ref 0)))).
 Definition x := (var 0).
 Definition y := (var 1).
 
-(* Well-formedness *)
 
 Lemma vrai_wf : well_formed vrai.
 Proof.
@@ -227,16 +229,36 @@ apply Beta_ref.
 apply Beta_redex_ref_trans; apply Beta_redex; apply correction_br.
 Qed.
 
-Inductive innermost_strategy : lambda_term -> lambda_term -> Prop :=
+(**** Innermost strategy ****)
+
+(*Inductive innermost_strategy : lambda_term -> lambda_term -> Prop :=
 | in_lambda : forall t : lambda_term, innermost_strategy (λ t) (λ t)
 | in_variable : forall n : nat, innermost_strategy (var n) (var n)
 | in_app1 : forall t1 t2 t1' t3 : lambda_term, innermost_strategy t1 t1' -> t1' <> (λ t3) -> innermost_strategy (lapp t1 t2) (lapp t1' t2)
 | in_app2 : forall t1 t2 t1' t2' t3 t4 t4': lambda_term, innermost_strategy t1 t1' ->
   innermost_strategy t2 t2' -> t1' = (λ t3) -> (beta_reduction (lapp t1' t2') t4) ->
   innermost_strategy t4 t4' ->
+  innermost_strategy (lapp t1 t2) t4'.*)
+
+Inductive innermost_strategy : lambda_term -> lambda_term -> Prop :=
+| in_lambda : forall t : lambda_term, innermost_strategy (λ t) (λ t)
+| in_app2 : forall t1 t2 t1' t2' t3 t4 t4': lambda_term, innermost_strategy t1 t1' ->
+  innermost_strategy t2 t2' -> t1' = (λ t3) -> ((lapp t1' t2') ->β t4) -> innermost_strategy t4 t4' ->
   innermost_strategy (lapp t1 t2) t4'.
 
-Lemma test0 : innermost_strategy (lapp id x) x.
+Lemma test0 : innermost_strategy (lapp id id) id.
+Proof.
+  unfold id.
+  eapply in_app2.
+  apply in_lambda.
+  apply in_lambda.
+  auto.
+  apply Beta_redex.
+  apply br_reference.
+  apply in_lambda.
+Qed.
+
+(*Lemma test0 : innermost_strategy (lapp id x) x.
 Proof.
   unfold id, x.
   eapply in_app2.
@@ -246,10 +268,10 @@ Proof.
   apply Beta_redex.
   apply br_reference.
   apply in_variable.
-Qed.
+Qed.*)
 
-Lemma wf_abstraction : forall (t : lambda_term) (n : nat), well_formed_count n t -> well_formed_count n (λ t).
-	Proof.
+Axiom wf_abstraction : forall (t : lambda_term) (n : nat), well_formed_count n t -> well_formed_count n (λ t).
+(*	Proof.
 	intros.
 	apply abstraction_wf.
 	induction t.
@@ -261,41 +283,29 @@ Lemma wf_abstraction : forall (t : lambda_term) (n : nat), well_formed_count n t
 	apply application_wf.
 	apply IHt1. apply H3.
 	apply IHt2. apply H4.
-	Admitted.
+	Admitted.*)
 
 Lemma wf_succ : forall (t1 : lambda_term) (n : nat), well_formed_count n t1 -> well_formed_count (S n) t1.
 	Proof.
-	intros.
-	induction t1.
-	apply variable_wf.
+	induction t1; intros.
 	inversion H.
 	apply reference_wf.
-	apply le_S. apply H2.
-	inversion H.
-	inversion H2.
+	inversion H; auto.
 	apply abstraction_wf.
-	apply variable_wf.
-	apply abstraction_wf.
-	apply reference_wf.
-	apply le_S. apply H3.
-	apply abstraction_wf.
-	apply wf_abstraction.
-	apply H3.
-	apply wf_abstraction.
-	apply application_wf. apply H3. apply H4.
-	inversion H.
-	apply application_wf.
-	apply IHt1_1. apply H3.
-	apply IHt1_2. apply H4.
-	Qed.
-	
-Lemma redex_well_formed : forall (t1 t2 : lambda_term), well_formed t1 -> t1 ->*β t2 -> well_formed t2.
-Proof.
-Admitted.
+	apply (IHt1 (S n)).
+	inversion H; auto.
+  apply application_wf; inversion H.
+  apply (IHt1_1 n); auto.
+  apply (IHt1_2 n); auto.
+Qed.
 
-Lemma innermost_strategy_well_formed : forall (t1 t2 : lambda_term),
+Axiom redex_well_formed : forall (t1 t2 : lambda_term), well_formed t1 -> t1 ->*β t2 -> well_formed t2.
+(*Proof.
+Admitted.*)
+
+Axiom innermost_strategy_well_formed : forall (t1 t2 : lambda_term),
   well_formed t1 -> innermost_strategy t1 t2 -> well_formed t2.
-  Proof.
+(*  Proof.
   unfold well_formed.
   intros.
   induction t1.
@@ -304,4 +314,4 @@ Lemma innermost_strategy_well_formed : forall (t1 t2 : lambda_term),
   inversion H0. apply H.
   inversion H0.
   inversion H.
-  Admitted.
+  Admitted.*)

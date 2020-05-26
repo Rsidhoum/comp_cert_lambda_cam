@@ -97,3 +97,12 @@ Proof.
 intros.
 simplification_cam.
 Qed.
+
+Axiom stack_two : forall (A : Set) (a b : stack_element A) (tl s : stack A) (c tc : code A),
+  cam_reduction_ref_trans A (a::b::tl) ((cur A c)::tc) s nil ->
+  exists (a' : stack_element A), exists (b' : stack_element A), exists (tl' : stack A), s = a'::b'::tl'.
+
+
+
+
+
